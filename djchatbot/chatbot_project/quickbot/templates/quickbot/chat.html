@@ -1,0 +1,288 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>  
+        /* Global styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+            background-color: #f7f7f7;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Light theme styles */
+        body.light-theme {
+            background-color: #f7f7f7;
+            color: #333;
+        }
+
+        /* Dark theme styles */
+        body.dark-theme {
+            background-color: #1f1f1f;
+            color: #e0e0e0;
+        }
+
+        /* Chat container styling */
+        .chat-container {
+            background: #fff;
+            width: 500px; /* Increased width */
+            max-width: 100%;
+            height: 650px; /* Increased height */
+            display: flex;
+            flex-direction: column;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .chat-container.dark-theme {
+            background: #2a2a2a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Chat header */
+        h1 {
+            background-color: #4A90E2;
+            color: white;
+            margin: 0;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        /* Messages container */
+        .messages-container {
+            flex-grow: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s;
+        }
+
+        .messages-container.dark-theme {
+            background-color: #3b3b3b;
+        }
+
+        /* Message input box */
+        #messageInput {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #messageInput:focus {
+            border-color: #4A90E2;
+        }
+
+        /* Send button */
+        button {
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #357ABD;
+        }
+
+        /* Response container */
+        #response {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+            color: #495057;
+        }
+
+        /* Chat bubbles */
+        .user-message, .bot-message {
+            padding: 10px 15px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            font-size: 1rem;
+        }
+
+        /* User message styling */
+        .user-message {
+            background-color: #007bff;
+            color: white;
+            align-self: flex-end;
+            margin-left: 10px;
+        }
+
+        /* Bot message styling */
+        .bot-message {
+            background-color: #f1f1f1;
+            color: #333;
+            align-self: flex-start;
+            margin-right: 10px;
+        }
+
+        /* Dark mode for chat bubbles */
+        .dark-theme .user-message {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .dark-theme .bot-message {
+            background-color: #3b3b3b;
+            color: #e0e0e0;
+        }
+
+        /* Smooth scroll for messages */
+        .messages-container {
+            scroll-behavior: smooth;
+        }
+
+        /* Theme toggle button (top right corner) */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4A90E2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Regenerate button */
+        .regenerate-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .regenerate-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+    <script>
+        let lastMessage = "";
+
+        async function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            if (!message.trim()) return; // Ignore empty messages
+
+            // Add user message to chat
+            const userMessageElement = document.createElement('div');
+            userMessageElement.classList.add('user-message');
+            userMessageElement.textContent = message;
+            document.querySelector('.messages-container').appendChild(userMessageElement);
+
+            // Clear the input box
+            document.getElementById('messageInput').value = '';
+            lastMessage = message; // Save the last message for regeneration
+
+            // Send message to server and get response
+            const response = await fetch('/quickbot/response/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message }),
+            });
+            const data = await response.json();
+            const botMessageElement = document.createElement('div');
+            botMessageElement.classList.add('bot-message');
+            botMessageElement.textContent = data.response;
+            document.querySelector('.messages-container').appendChild(botMessageElement);
+
+            // Scroll to the bottom to show the latest message
+            const messagesContainer = document.querySelector('.messages-container');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function regenerateResponse() {
+            if (lastMessage.trim()) {
+                // Regenerate the response for the last message
+                const response = await fetch('/quickbot/response/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: lastMessage }),
+                });
+                const data = await response.json();
+                const botMessageElement = document.createElement('div');
+                botMessageElement.classList.add('bot-message');
+                botMessageElement.textContent = data.response;
+                document.querySelector('.messages-container').appendChild(botMessageElement);
+
+                // Scroll to the bottom
+                const messagesContainer = document.querySelector('.messages-container');
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }
+
+        // Toggle theme function
+        function toggleTheme() {
+            const body = document.body;
+            const chatContainer = document.querySelector('.chat-container');
+            const messagesContainer = document.querySelector('.messages-container');
+
+            // Toggle classes for theme
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                body.classList.add('dark-theme');
+                chatContainer.classList.add('dark-theme');
+                messagesContainer.classList.add('dark-theme');
+            } else {
+                body.classList.remove('dark-theme');
+                body.classList.add('light-theme');
+                chatContainer.classList.remove('dark-theme');
+                messagesContainer.classList.remove('dark-theme');
+            }
+        }
+
+        
+    </script>
+</head>
+<body class="light-theme">
+    <div class="chat-container">
+        <h1>Chatbot</h1>
+        <div class="messages-container">
+            Messages will appear here 
+        </div>
+        <input type="text" id="messageInput" placeholder="Type your message">
+        <button onclick="sendMessage()">Send</button>
+        <button class="regenerate-btn" onclick="regenerateResponse()">Regenerate</button>
+    </div>
+    <button class="theme-toggle" onclick="toggleTheme()">🌙/🌞</button>
+</body>
+</html> 
+
